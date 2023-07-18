@@ -1,2 +1,2 @@
-# consty
-Make Rust enums consty
+# soccer
+Associated constants for Rust enums
