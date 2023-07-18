@@ -1,7 +1,7 @@
 use proc_macro::TokenStream;
 use quote::{format_ident, quote, ToTokens};
 use syn::{
-    parse_macro_input, Attribute, Data, DataEnum, DeriveInput, Expr, Fields, Generics, Ident, Type,
+    parse_macro_input, Attribute, Data, DataEnum, DeriveInput, Expr, Fields, Generics, Ident, Type, TypeReference,
     Variant,
 };
 
@@ -37,6 +37,18 @@ pub fn derive_try_from(tokens: TokenStream) -> TokenStream {
         variants,
     } = unpack_input(input);
 
+    let const_ty_with_lifetime = const_ty;
+    let const_ty = match &const_ty_with_lifetime {
+        Type::Reference(ref_ty) => {
+            Type::Reference(TypeReference {
+                lifetime: None,
+                ..ref_ty.clone()
+            })
+        },
+
+        _ => const_ty_with_lifetime.clone(),
+    };
+
     let const_vals = variants.iter().map(|v| {
         let const_val_name = generated_const_name(&v.name);
         let expr = generate_const_val_expr(&enum_name, &const_ty, v);
@@ -58,9 +70,9 @@ pub fn derive_try_from(tokens: TokenStream) -> TokenStream {
     let expanded = quote! {
         impl ::core::convert::TryFrom<#const_ty> for #enum_name
         where
-            #const_ty: ::core::cmp::PartialEq + ::core::cmp::Eq,
+            #const_ty_with_lifetime: ::core::marker::Copy + ::core::cmp::PartialEq + ::core::cmp::Eq,
         {
-            type Error = #const_ty;
+            type Error = ();
 
             #[allow(non_upper_case_globals)]
             fn try_from(val: #const_ty) -> Result<Self, Self::Error> {
@@ -68,7 +80,7 @@ pub fn derive_try_from(tokens: TokenStream) -> TokenStream {
 
                 match val {
                     #(#match_arms)*
-                    other => Err(other),
+                    _ => Err(()),
                 }
             }
         }
@@ -76,6 +88,16 @@ pub fn derive_try_from(tokens: TokenStream) -> TokenStream {
 
     expanded.into()
 }
+/*
+#[proc_macro_derive(FromStr, attributes(const_val))]
+pub fn derive_from_str(tokens: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(tokens as DeriveInput);
+    let ConstEnumInfo {
+        name: enum_name,
+        variants,
+        ..
+    } = unpack_input(input);
+}*/
 
 #[proc_macro_derive(Into, attributes(const_ty, const_val))]
 pub fn derive_into(tokens: TokenStream) -> TokenStream {
@@ -85,6 +107,7 @@ pub fn derive_into(tokens: TokenStream) -> TokenStream {
         const_ty,
         variants,
     } = unpack_input(input);
+
     let const_vals = variants.iter().map(|v| {
         let const_val_name = generated_const_name(&v.name);
         let expr = generate_const_val_expr(&enum_name, &const_ty, v);
@@ -106,7 +129,7 @@ pub fn derive_into(tokens: TokenStream) -> TokenStream {
     let expanded = quote! {
         impl ::core::convert::Into<#const_ty> for #enum_name
         where
-            #const_ty: ::core::cmp::PartialEq + ::core::cmp::Eq,
+            #const_ty: ::core::marker::Copy + ::core::cmp::PartialEq + ::core::cmp::Eq,
         {
             #[allow(non_upper_case_globals)]
             fn into(self) -> #const_ty {
