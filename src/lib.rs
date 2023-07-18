@@ -1,9 +1,9 @@
-use syn::{
-    parse_macro_input,
-    Attribute, Data, DataEnum, DeriveInput, Expr, Fields, Generics, Ident, Type, Variant,
-};
 use proc_macro::TokenStream;
 use quote::{format_ident, quote, ToTokens};
+use syn::{
+    parse_macro_input, Attribute, Data, DataEnum, DeriveInput, Expr, Fields, Generics, Ident, Type,
+    Variant,
+};
 
 struct ConstEnumInfo {
     name: Ident,
@@ -31,7 +31,11 @@ enum ConstEnumKind {
 #[proc_macro_derive(TryFrom, attributes(const_ty, const_val))]
 pub fn derive_try_from(tokens: TokenStream) -> TokenStream {
     let input = parse_macro_input!(tokens as DeriveInput);
-    let ConstEnumInfo { name: enum_name, const_ty, variants } = unpack_input(input);
+    let ConstEnumInfo {
+        name: enum_name,
+        const_ty,
+        variants,
+    } = unpack_input(input);
 
     let const_vals = variants.iter().map(|v| {
         let const_val_name = generated_const_name(&v.name);
@@ -76,7 +80,11 @@ pub fn derive_try_from(tokens: TokenStream) -> TokenStream {
 #[proc_macro_derive(Into, attributes(const_ty, const_val))]
 pub fn derive_into(tokens: TokenStream) -> TokenStream {
     let input = parse_macro_input!(tokens as DeriveInput);
-    let ConstEnumInfo { name: enum_name, const_ty, variants } = unpack_input(input);
+    let ConstEnumInfo {
+        name: enum_name,
+        const_ty,
+        variants,
+    } = unpack_input(input);
     let const_vals = variants.iter().map(|v| {
         let const_val_name = generated_const_name(&v.name);
         let expr = generate_const_val_expr(&enum_name, &const_ty, v);
@@ -117,7 +125,11 @@ pub fn derive_into(tokens: TokenStream) -> TokenStream {
 #[proc_macro_derive(Display, attributes(const_ty))]
 pub fn derive_display(tokens: TokenStream) -> TokenStream {
     let input = parse_macro_input!(tokens as DeriveInput);
-    let ConstEnumInfo { name: enum_name, const_ty, .. } = unpack_input(input);
+    let ConstEnumInfo {
+        name: enum_name,
+        const_ty,
+        ..
+    } = unpack_input(input);
     let expanded = quote! {
         impl ::core::fmt::Display for #enum_name
         where
@@ -169,18 +181,25 @@ fn extract_const_ty(attrs: impl Iterator<Item = Attribute>) -> (Type, ConstEnumK
 
     for attr in attrs {
         if attr.path().is_ident("const_ty") {
-            let const_ty = attr.parse_args().expect("failed to parse type from #[const_ty(...)] attribute");
+            let const_ty = attr
+                .parse_args()
+                .expect("failed to parse type from #[const_ty(...)] attribute");
             result = Some((const_ty, ConstEnumKind::Assoc));
         } else if attr.path().is_ident("repr") && result.is_none() {
-                let repr_ty = attr.parse_args().expect("failed to parse type from #[repr(...)] attribute");
-                result = Some((repr_ty, ConstEnumKind::Discrim));
+            let repr_ty = attr
+                .parse_args()
+                .expect("failed to parse type from #[repr(...)] attribute");
+            result = Some((repr_ty, ConstEnumKind::Discrim));
         }
     }
 
     result.expect("missing either #[const_ty(...)] or #[repr(...)] attribute to specify associated constant type")
 }
 
-fn extract_variants(variants: impl Iterator<Item = Variant>, kind: ConstEnumKind) -> Vec<VariantInfo> {
+fn extract_variants(
+    variants: impl Iterator<Item = Variant>,
+    kind: ConstEnumKind,
+) -> Vec<VariantInfo> {
     variants.map(|v| {
         if !is_fieldless(&v) {
             panic!("only fieldless enum variants are allowed");
@@ -230,7 +249,11 @@ fn generated_const_name(variant_name: &Ident) -> Ident {
 }
 
 // Couldn't think of a better way to return the result of a quote
-fn generate_const_val_expr(enum_name: &Ident, const_ty: &Type, variant: &VariantInfo) -> impl ToTokens {
+fn generate_const_val_expr(
+    enum_name: &Ident,
+    const_ty: &Type,
+    variant: &VariantInfo,
+) -> impl ToTokens {
     match variant.const_val {
         ConstVal::Discrim => {
             let variant_name = &variant.name;
@@ -240,8 +263,8 @@ fn generate_const_val_expr(enum_name: &Ident, const_ty: &Type, variant: &Variant
             }
         },
 
-        ConstVal::Assoc(ref expr) => quote! { 
-            #expr 
+        ConstVal::Assoc(ref expr) => quote! {
+            #expr
         },
     }
 }
