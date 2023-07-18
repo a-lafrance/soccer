@@ -8,7 +8,7 @@ description = "Associated constants for enums"
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/a-lafrance/soccer"
-keywords = ["enum", "constant", "derive", "discriminant"]
+keywords = ["enum", "constant", "derive", "discriminant", "codegen"]
 
 [dependencies]
 quote = "1.0.31"

@@ -88,16 +88,6 @@ pub fn derive_try_from(tokens: TokenStream) -> TokenStream {
 
     expanded.into()
 }
-/*
-#[proc_macro_derive(FromStr, attributes(const_val))]
-pub fn derive_from_str(tokens: TokenStream) -> TokenStream {
-    let input = parse_macro_input!(tokens as DeriveInput);
-    let ConstEnumInfo {
-        name: enum_name,
-        variants,
-        ..
-    } = unpack_input(input);
-}*/
 
 #[proc_macro_derive(Into, attributes(const_ty, const_val))]
 pub fn derive_into(tokens: TokenStream) -> TokenStream {
