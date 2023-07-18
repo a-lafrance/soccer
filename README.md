@@ -52,4 +52,4 @@ fn main() {
 
 Those are both actual use cases I've encountered in my own Rust projects that motivated the creation of this crate.
 
-(I used to maintain the [https://github.com/a-lafrance/discrim](`discrim`) crate for this discriminant-based conversion codegen, but since it got absorbed into `soccer` I've archived it and don't work on it anymore)
+(I used to maintain the [`discrim`](https://github.com/a-lafrance/discrim) crate for this discriminant-based conversion codegen, but since it got absorbed into `soccer` I've archived it and don't work on it anymore)
